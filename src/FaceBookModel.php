@@ -25,10 +25,13 @@ class FaceBookModel
 	*
 	*/
     public function __construct($email, $pass){
+    	if (!is_writable(dirname(__FILE__).'/../cache/cookie/')) {
+    		die('cache 目录不可写!');
+    	}
+
     	$this->email = $email;
     	$this->pass  = $pass;
-    	// $this->new_pass = I('newpass');
-        $this->cookie_file = '../cache/cookie/'.$this->email;
+        $this->cookie_file = dirname(__FILE__).'/../cache/cookie/'.$this->email;
 
 		$this->curl_opts    = array(
 			CURLOPT_COOKIEJAR      => $this->cookie_file,
@@ -82,15 +85,15 @@ class FaceBookModel
         $checkpoint = strpos($content,"checkpoint");
         $maches_num = preg_match_all("/Set-Cookie/i", $content);
 
-        if ($lock!=-1 || $lock2!=-1 || $checkpoint!=-1) {
+        if ($lock || $lock2 || $checkpoint) {
             $rv['login_status'] = 2;
   			$rv['login_msg']    = '锁号';
         } 
-        else if($mail != -1) {
+        else if($mail) {
 			$rv['login_status'] = 3;
   			$rv['login_msg']    = '验证邮箱';        
   		}
-		else if ($safe != -1) {
+		else if ($safe ) {
             $rv['login_status'] = 4;
   			$rv['login_msg']    = '安全原因';        
         }
@@ -160,7 +163,11 @@ class FaceBookModel
 	*/
 	public function catchBirthday(){
 		$capt_opts = $this->curl_opts;
-		$capt_opts[CURLOPT_URL] =  $this->profile_href.'/about';
+		if (stripos($this->profile_href,'?')) {
+			$capt_opts[CURLOPT_URL] =  $this->profile_href.'&sk=about';
+		}else{
+			$capt_opts[CURLOPT_URL] =  $this->profile_href.'/about';
+		}
 		$ch = curl_init();
 		curl_setopt_array($ch, $capt_opts);
 		$content = curl_exec($ch);
@@ -307,7 +314,11 @@ class FaceBookModel
 	private function catchFriendsHrefs(){
 		// 抓取我的好友页面
 		$capt_opts = $this->curl_opts;
-		$capt_opts[CURLOPT_URL] = $this->profile_href.'/friends';
+		if (stripos($this->profile_href,'?')) {
+			$capt_opts[CURLOPT_URL] = $this->profile_href.'&sk=friends';
+		}else{
+			$capt_opts[CURLOPT_URL] = $this->profile_href.'/friends';
+		}
 		$ch = curl_init();
 		curl_setopt_array($ch, $capt_opts);
 		$content = curl_exec($ch);
@@ -347,11 +358,7 @@ class FaceBookModel
         }
 
 		$rc = new \RollingCurl(array($this,'sendRequestCallBack'));
-        if(sizeof($requests)<20){
-            $rc->window_size = sizeof($requests);
-        }else{
-            $rc->window_size = 20;
-        }
+        $rc->window_size = 20;
 
 		foreach ($requests as $value) {
 			$rc->add($value);
@@ -420,11 +427,7 @@ class FaceBookModel
         }
 
 		$rc = new \RollingCurl();
-		if (sizeof($requests)<20) {
-			$rc->window_size = sizeof($requests);
-		}else{
-			$rc->window_size = 20;
-		}
+		$rc->window_size = 20;
 		
 		foreach ($requests as $value) {
 			$rc->add($value);
