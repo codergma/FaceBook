@@ -19,18 +19,20 @@ class FaceBookModel
 	public $user_id      = null;
 	public $token        = null;
 	public $version      = null;
+	public $new_pass	 = null;
 
 	/**
 	* 构造函数
 	*
 	*/
-    public function __construct($email, $pass){
+    public function __construct($email, $pass, $new_pass=''){
     	if (!is_writable(dirname(__FILE__).'/../cache/cookie/')) {
     		die('cache 目录不可写!');
     	}
 
     	$this->email = $email;
     	$this->pass  = $pass;
+    	$this->new_pass = $new_pass;
         $this->cookie_file = dirname(__FILE__).'/../cache/cookie/'.$this->email;
 
 		$this->curl_opts    = array(
@@ -211,7 +213,7 @@ class FaceBookModel
 		$capt_opts = $this->curl_opts;
 		$url =  $this->base_url.'/ajax/reqs.php?__pc=EXP1%3ADEFAULT';
 		$capt_opts[CURLOPT_POST] = true;
-		preg_match_all("/class=\\\\\"objectListItem\\\\\" id=\\\\\"([\s\S]*)_1_req/iU", $content,$matches);
+		preg_match_all("/class=\\\\\"objectListItem jewelItemNew\\\\\" id=\\\\\"([\s\S]*)_1_req/iU", $content,$matches);
 		$confirm = $matches[1];
 
         
@@ -280,8 +282,8 @@ class FaceBookModel
 			'fb_dtsg'=>$fb_dtsg,
 			'password_strength'=>'2',
 			'password_old'=>$this->pass,
-			'password_new'=>$this->oldpass,
-			'password_confirm'=>$this->oldpass,
+			'password_new'=>$this->new_pass,
+			'password_confirm'=>$this->new_pass,
 			'__user' => $this->user_id,
 			);
 		$capt_opts = array();
