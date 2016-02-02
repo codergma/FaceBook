@@ -358,7 +358,7 @@ class FaceBookModel
 		foreach (pq("a._39g5") as $value) {
 			$href = pq($value)->attr("href");
 			if(stripos($href,'www')){
-	            $friends_url[] = urldecode($href.'?pnref=friends.all'.'&__pc=EXP1%3ADEFAULT'.'&ajaxpipe=1'.'&ajaxpipe_token='.$ajaxpipe_token .'&quickling[version]='.$this->quickling_version . '&__user='.$this->user_id .'&__a=1'.'&__rev='.$this->version );
+	            $friends_url[] = $href.'?pnref=friends.all'.'&__pc=EXP1%3ADEFAULT'.'&ajaxpipe=1'.'&ajaxpipe_token='.$ajaxpipe_token .'&quickling[version]='.$this->quickling_version . '&__user='.$this->user_id .'&__a=1'.'&__rev='.$this->version;
 			}
 		}
 		return $friends_url;
