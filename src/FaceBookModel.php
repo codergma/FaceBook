@@ -20,6 +20,7 @@ class FaceBookModel
 	public $token        = null;
 	public $version      = null;
 	public $new_pass	 = null;
+	public $quickling_version = null;
 
 	/**
 	* 构造函数
@@ -120,19 +121,34 @@ class FaceBookModel
 		curl_setopt_array($ch, $capt_opts);
 		$content = curl_exec($ch);
 		curl_close($ch);
+		file_put_contents('/home/liubin/Desktop/userinfo.html', $content);
 
 		// profile_href
 		\phpQuery::newDocument($content);
 		$this->profile_href = pq("div [data-click='profile_icon'] a")->attr('href');
 		// user_id
 		preg_match('/{"USER_ID":"([\s\S]*)",/iU', $content,$matches);
-		$this->user_id =  $matches[1];
+		if (isset($matches[1])) {
+			$this->user_id =  $matches[1];
+			echo $this->user_id;
+
+		}
 		// token
 		preg_match('/{"token":"([\s\S]*)"}/iU', $content,$matches);
-		$this->token = $matches[1];
+		if (isset($matches[1])) {
+			$this->token = $matches[1];
+		}
 		// version
 		preg_match('/{"version":"([\s\S]*);/iU', $content,$matches);
-		$this->version = $matches[1];
+		if (isset($matches[1])) {
+			$this->version = $matches[1];
+		}
+		// quickling_version
+		preg_match('/{"version":"([\s\S]*)"/iU', $content,$matches);
+		if (isset($matches[1])) {
+			$this->quickling_version = $matches[1];
+		}
+
 
 		if(empty($this->profile_href)){
 			return false;
@@ -305,6 +321,7 @@ class FaceBookModel
 	*/
 	public function addFriends(){
 		$friends_url = $this->catchFriendsHrefs();
+	    file_put_contents('/home/liubin/Desktop/friends_url.html', $friends_url[0]);
 		$this->catchAndSend($friends_url);
 	}
 
@@ -325,17 +342,23 @@ class FaceBookModel
 		curl_setopt_array($ch, $capt_opts);
 		$content = curl_exec($ch);
 		curl_close($ch);
+	    file_put_contents('/home/liubin/Desktop/url.html', $content);
 
 		// 处理内容
 		$content = preg_replace("/<code[\s\S]*><!--/iU", "", $content);
 		$content = preg_replace("/--><\/code>/iU", "", $content);
+		// ajaxpipe_token
+		preg_match('/{"ajaxpipe_token":"([\s\S]*)"/iU', $content,$matches);
+		if (isset($matches[1])) {
+			$ajaxpipe_token = $matches[1];
+		}
 		// 分析html,获取好友的好友链接
 		\phpQuery::newDocumentHTML($content);
 		$friends_url = array();
 		foreach (pq("a._39g5") as $value) {
 			$href = pq($value)->attr("href");
 			if(stripos($href,'www')){
-	            $friends_url[] = $href;
+	            $friends_url[] = urldecode($href.'?pnref=friends.all'.'&__pc=EXP1%3ADEFAULT'.'&ajaxpipe=1'.'&ajaxpipe_token='.$ajaxpipe_token .'&quickling[version]='.$this->quickling_version . '&__user='.$this->user_id .'&__a=1'.'&__rev='.$this->version );
 			}
 		}
 		return $friends_url;
@@ -359,7 +382,7 @@ class FaceBookModel
         	return ;
         }
 
-		$rc = new \RollingCurl(array($this,'sendRequestCallBack'));
+		$rc = new \RollingCurl(array($this,array($this,'sendRequestCallBack')));
         $rc->window_size = 20;
 
 		foreach ($requests as $value) {
@@ -373,6 +396,11 @@ class FaceBookModel
 	*
 	*/
 	public  function sendRequestCallBack($response, $info=''){
+        if($response != null){
+		    file_put_contents('/home/liubin/Desktop/userinfo.html', $response);
+        }else{
+		    file_put_contents('/home/liubin/Desktop/userinfo.html', $response);
+        }
 		// 处理内容
 		$response = preg_replace("/<code[\s\S]*><!--/iU", "", $response);
 		$response = preg_replace("/--><\/code>/iU", "", $response);
