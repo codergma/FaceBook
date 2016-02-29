@@ -68,7 +68,8 @@ class FaceBookModel
 			);
 
 		// 必须带上这个cookie，facebook用来检测是否时通过浏览器登录的
-		$cookie = 'fb_gate=https%3A%2F%2Fwww.facebook.com%2F; _js_reg_fb_ref=https%3A%2F%2Fwww.facebook.com%2F';
+		// $cookie = 'fb_gate=https%3A%2F%2Fwww.facebook.com%2F; _js_reg_fb_ref=https%3A%2F%2Fwww.facebook.com%2F';
+		$cookie = "datr=12bUVg_MxFfsmenzGV3GD-xF;reg_fb_gate=https%3A%2F%2Fwww.facebook.com%2F;reg_fb_ref=https%3A%2F%2Fwww.facebook.com%2F";
 		$login_opts = $this->curl_opts;
 		$login_opts[CURLOPT_URL]	 	 = $this->base_url.'login.php?login_attempt=1&lwv=110';
 		$login_opts[CURLOPT_POST]		 = true;
@@ -79,6 +80,7 @@ class FaceBookModel
 		$ch = curl_init();
 		curl_setopt_array($ch,$login_opts);
 		$content = curl_exec($ch);
+		echo 'content:'.$content;
 		curl_close($ch);
 
 		$lock  = stripos($content,"锁");
@@ -205,6 +207,7 @@ class FaceBookModel
 	public function acceptFriend(){
 		$capt_opts = $this->curl_opts;
 		$capt_opts[CURLOPT_URL] =  $this->base_url."/ajax/requests/loader/?__pc=EXP1%3ADEFAULT";
+		// $capt_opts[CURLOPT_URL] =  $this->base_url."/friends/requests/?fcref=jwl";
 		$query = array(
 			"log_impressions"=>true,
 			"__user"=>$this->user_id,
@@ -222,6 +225,10 @@ class FaceBookModel
         $content = str_replace('-->',  '', $content);
 
         $pos = stripos($content, "fbRequestList hasPYMK");
+        if (empty($pos)) {
+			file_put_contents(dirname(__FILE__).'/../cache/test', $pos);        
+        }
+             
         if (!$pos) {
         	return;
         }
@@ -229,10 +236,16 @@ class FaceBookModel
 		$capt_opts = $this->curl_opts;
 		$url =  $this->base_url.'/ajax/reqs.php?__pc=EXP1%3ADEFAULT';
 		$capt_opts[CURLOPT_POST] = true;
-		preg_match_all("/class=\\\\\"objectListItem jewelItemNew\\\\\" id=\\\\\"([\s\S]*)_1_req/iU", $content,$matches);
+		// preg_match_all("/class=\\\\\"objectListItem jewelItemNew\\\\\" id=\\\\\"([\s\S]*)_1_req/iU", $content,$matches);
+		preg_match_all("/class=\\\\\"objectListItem\\\\\" id=\\\\\"([\s\S]*)_1_req/iU", $content,$matches);
+		preg_match_all("/class=\\\\\"title fsl fwb fcb\\\\\"([\s\S]*)fref=jewel\\\\\">([\s\S]*)([\s\S]*)a>/iU", $content,$matches2);
+		foreach ($matches2[2] as  $value) {
+			file_put_contents(dirname(__FILE__).'/../cache/test', $value);  
+			return;
+		}
+		return;
 		$confirm = $matches[1];
 
-        
         foreach ($confirm as $value) {
         	$query = array(
 			"fb_dtsg"=>$this->token,
